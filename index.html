@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Pretty Photo Stack ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .dancing-script {
+            font-family: 'Dancing Script', cursive;
+        }
+        
+        .photo-stack {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            margin: 0 auto;
+        }
+        
+        .photo-card {
+            position: absolute;
+            width: 280px;
+            height: 350px;
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: center center;
+            border-radius: 20px;
+            overflow: visible;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: white;
+            padding: 20px;
+            left: 50%;
+            top: 50%;
+            margin-left: -140px;
+            margin-top: -175px;
+        }
+        
+        .photo-card:active {
+            cursor: grabbing;
+        }
+        
+        .photo-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+        
+        .photo-card.dragging {
+            z-index: 1000;
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        
+        .cute-text {
+            position: absolute;
+            font-family: 'Dancing Script', cursive;
+            font-weight: 600;
+            font-size: 18px;
+            color: #ff6b9d;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .text-top { top: -15px; left: 50%; transform: translateX(-50%); }
+        .text-bottom { bottom: -15px; left: 50%; transform: translateX(-50%); }
+        .text-left { left: -60px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .text-right { right: -60px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+        
+        .heart-float {
+            animation: heartFloat 3s infinite;
+        }
+        
+        @keyframes heartFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(45deg, #ff6b9d, #c44569, #f8b500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .upload-area {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px dashed #ff6b9d;
+        }
+        
+        .upload-area:hover {
+            border-color: #c44569;
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="min-h-screen overflow-hidden">
+    <!-- Floating Hearts Background -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="heart-float absolute top-20 left-10 text-pink-300 opacity-30">💕</div>
+        <div class="heart-float absolute top-40 right-20 text-pink-400 opacity-40" style="animation-delay: 0.5s;">💖</div>
+        <div class="heart-float absolute top-60 left-1/4 text-pink-300 opacity-30" style="animation-delay: 1s;">✨</div>
+        <div class="heart-float absolute top-80 right-1/3 text-pink-400 opacity-40" style="animation-delay: 1.5s;">🌸</div>
+        <div class="heart-float absolute bottom-40 left-20 text-pink-300 opacity-30" style="animation-delay: 2s;">💕</div>
+        <div class="heart-float absolute bottom-60 right-10 text-pink-400 opacity-40" style="animation-delay: 2.5s;">🦋</div>
+    </div>
+
+    <!-- Photo Counter -->
+    <div class="counter" id="photoCounter">0</div>
+
+    <div class="max-w-4xl mx-auto relative z-10 p-4">
+        <!-- Header -->
+        <div id="headerSection" class="text-center mb-8">
+            <h1 class="dancing-script text-6xl font-bold gradient-text mb-4">
+                ✨ My Photo Stack ✨
+            </h1>
+            <p class="text-white text-lg font-light">
+                Upload photos and drag them around 💕
+            </p>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="uploadSection" class="upload-area rounded-3xl p-8 mb-8 mx-auto max-w-2xl shadow-2xl">
+            <div class="text-center">
+                <div class="mb-6">
+                    <div class="text-6xl mb-4">📸</div>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-2">Add Your Photos</h2>
+                    <p class="text-gray-500">Choose multiple photos to create your stack</p>
+                </div>
+                
+                <input 
+                    type="file" 
+                    id="photoInput" 
+                    multiple 
+                    accept="image/*" 
+                    class="hidden"
+                >
+                
+                <label for="photoInput" class="cursor-pointer block">
+                    <div class="bg-gradient-to-r from-pink-400 to-purple-500 text-white px-8 py-4 rounded-full text-lg font-medium hover:from-pink-500 hover:to-purple-600 transition-all duration-300 inline-block shadow-lg hover:shadow-xl transform hover:scale-105">
+                        ✨ Choose Photos ✨
+                    </div>
+                </label>
+                
+                <div class="mt-4">
+                    <button 
+                        id="clearBtn" 
+                        class="bg-red-400 text-white px-6 py-2 rounded-full hover:bg-red-500 transition-all duration-300 hidden"
+                    >
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Stack Container -->
+        <div class="photo-stack" id="photoStack">
+            <!-- Photos will be stacked here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-16">
+            <div class="text-8xl mb-6">🌈</div>
+            <h3 class="dancing-script text-4xl font-bold text-white mb-4">
+                Ready for some magic? ✨
+            </h3>
+            <p class="text-pink-200 text-lg">Upload your favorite photos and drag them around!</p>
+        </div>
+    </div>
+
+    <!-- Full Screen Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-50 p-4">
+        <div class="relative max-w-4xl max-h-full">
+            <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain rounded-2xl">
+            <button 
+                id="closeModal"
+                class="absolute -top-4 -right-4 bg-pink-500 text-white p-3 rounded-full hover:bg-pink-600 transition-colors shadow-lg"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let photoCards = [];
+        let zIndexCounter = 100;
+
+        // Cute messages for card borders
+        const cuteMessages = [
+            "Hey Cutie! 💕", "So Beautiful! ✨", "Gorgeous! 💖", "Stunning! 🌟",
+            "Pretty Girl! 🌸", "Amazing! 💫", "Lovely! 🦋", "Perfect! 💕",
+            "Sweet! 🍭", "Adorable! 🥰", "Angel! 😇", "Princess! 👸",
+            "Breathtaking! 💖", "Fabulous! ✨", "Charming! 💕", "Divine! 🌟",
+            "Radiant! ☀️", "Elegant! 💎", "Graceful! 🌺", "Magnificent! 👑"
+        ];
+
+        // DOM elements
+        const photoInput = document.getElementById('photoInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const headerSection = document.getElementById('headerSection');
+        const photoStack = document.getElementById('photoStack');
+        const photoCounter = document.getElementById('photoCounter');
+        const emptyState = document.getElementById('emptyState');
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modalImage');
+        const closeModal = document.getElementById('closeModal');
+
+        // Event listeners
+        photoInput.addEventListener('change', handleFileSelection);
+        clearBtn.addEventListener('click', clearAllPhotos);
+        closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+        
+        // Close modal on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        });
+
+        // Drag and drop for upload area
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.transform = 'scale(1.02)';
+            uploadArea.style.borderColor = '#c44569';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.transform = 'scale(1)';
+            uploadArea.style.borderColor = '#ff6b9d';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.transform = 'scale(1)';
+            uploadArea.style.borderColor = '#ff6b9d';
+            
+            const files = Array.from(e.dataTransfer.files).filter(file => 
+                file.type.startsWith('image/')
+            );
+            
+            if (files.length > 0) {
+                processFiles(files);
+            }
+        });
+
+        function handleFileSelection(event) {
+            const files = Array.from(event.target.files);
+            if (files.length > 0) {
+                processFiles(files);
+            }
+        }
+
+        function processFiles(files) {
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const card = {
+                        id: Date.now() + index,
+                        src: e.target.result,
+                        name: file.name
+                    };
+                    
+                    photoCards.push(card);
+                    createPhotoCard(card, photoCards.length - 1);
+                    updateUI();
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            // Reset file input
+            photoInput.value = '';
+        }
+
+        function createPhotoCard(card, index) {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'photo-card';
+            cardElement.dataset.id = card.id;
+            cardElement.style.zIndex = zIndexCounter++;
+            
+            // Random slight rotation and offset for natural stack look
+            const rotation = (Math.random() - 0.5) * 10;
+            const offsetX = (Math.random() - 0.5) * 20;
+            const offsetY = (Math.random() - 0.5) * 20;
+            
+            cardElement.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${rotation}deg)`;
+            
+            // Get random cute messages for each side
+            const topMessage = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
+            const bottomMessage = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
+            const leftMessage = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
+            const rightMessage = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
+            
+            cardElement.innerHTML = `
+                <div class="cute-text text-top">${topMessage}</div>
+                <div class="cute-text text-bottom">${bottomMessage}</div>
+                <div class="cute-text text-left">${leftMessage}</div>
+                <div class="cute-text text-right">${rightMessage}</div>
+                <img src="${card.src}" alt="${card.name}" />
+            `;
+            
+            // Add drag functionality
+            addDragFunctionality(cardElement);
+            
+            // Add double-click to view full size
+            cardElement.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                openModal(card.src, card.name);
+            });
+            
+            photoStack.appendChild(cardElement);
+        }
+
+        function addDragFunctionality(cardElement) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            cardElement.addEventListener('mousedown', startDrag);
+            cardElement.addEventListener('touchstart', startDrag);
+
+            function startDrag(e) {
+                isDragging = true;
+                cardElement.classList.add('dragging');
+                cardElement.style.zIndex = zIndexCounter++;
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const rect = cardElement.getBoundingClientRect();
+                startX = clientX;
+                startY = clientY;
+                startLeft = rect.left;
+                startTop = rect.top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', drag, { passive: false });
+                document.addEventListener('touchend', stopDrag);
+                
+                e.preventDefault();
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const deltaX = clientX - startX;
+                const deltaY = clientY - startY;
+                
+                const newLeft = startLeft + deltaX;
+                const newTop = startTop + deltaY;
+                
+                cardElement.style.left = newLeft + 'px';
+                cardElement.style.top = newTop + 'px';
+                cardElement.style.transform = 'none';
+                cardElement.style.margin = '0';
+            }
+
+            function stopDrag() {
+                if (!isDragging) return;
+                
+                isDragging = false;
+                cardElement.classList.remove('dragging');
+                
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', drag);
+                document.removeEventListener('touchend', stopDrag);
+            }
+        }
+
+        function updateUI() {
+            if (photoCards.length > 0) {
+                uploadSection.classList.add('hidden');
+                headerSection.classList.add('hidden');
+                emptyState.classList.add('hidden');
+                clearBtn.classList.remove('hidden');
+                photoCounter.textContent = photoCards.length;
+            } else {
+                uploadSection.classList.remove('hidden');
+                headerSection.classList.remove('hidden');
+                emptyState.classList.remove('hidden');
+                clearBtn.classList.add('hidden');
+                photoCounter.textContent = '0';
+            }
+        }
+
+        function clearAllPhotos() {
+            photoCards = [];
+            photoStack.innerHTML = '';
+            updateUI();
+        }
+
+        function openModal(src, name) {
+            modalImage.src = src;
+            modalImage.alt = name;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Add some random floating elements
+        function addFloatingElement() {
+            const emojis = ['✨', '💕', '🌸', '🦋', '💖', '🌟'];
+            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            const element = document.createElement('div');
+            element.textContent = emoji;
+            element.className = 'fixed text-2xl opacity-60 pointer-events-none z-0';
+            element.style.left = Math.random() * 100 + 'vw';
+            element.style.top = '100vh';
+            element.style.animation = `floatUp 4s linear forwards`;
+            
+            document.body.appendChild(element);
+            
+            setTimeout(() => element.remove(), 4000);
+        }
+
+        // Add floating elements periodically
+        setInterval(addFloatingElement, 3000);
+
+        // CSS for floating animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes floatUp {
+                to {
+                    transform: translateY(-120vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
